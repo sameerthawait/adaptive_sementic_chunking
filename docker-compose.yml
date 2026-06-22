@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  asc-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asc-app
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_PERPLEXITY_MODEL=llama3.2:3b
+      - OLLAMA_EMBED_MODEL=nomic-embed-text
+      - CHROMA_PERSIST_DIR=/app/data/chromadb
+      - LOG_LEVEL=INFO
+    volumes:
+      - asc-data:/app/data
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-service
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    # If a GPU is available on the host machine, uncomment the deploy block below 
+    # to pass GPU access to the Ollama container for accelerated inference:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  asc-data:
+  ollama-data:

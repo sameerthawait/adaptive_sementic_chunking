@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #EEECEA;
+  --surface: #FFFFFF;
+  --surface-2: #F4F2EE;
+  --border: #D2CEC6;
+  --t1: #18160F;
+  --t2: #5A5449;
+  --t3: #A09890;
+  --nav: #1B2B3C;
+  --nav-hover: #243750;
+  --signal: #2C5F8A;
+  --signal-light: #EAF2FA;
+  --signal-border: #BAD0E8;
+  --boundary: #B45309;
+  --boundary-light: #FDF4E8;
+  --success: #276749;
+  --code-bg: #1A2332;
+  --code-text: #C4D4E4;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--t1);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+}

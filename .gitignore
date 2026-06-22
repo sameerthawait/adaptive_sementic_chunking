@@ -1,0 +1,43 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Compilation
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Environment Secrets & Local Configs
+.env
+.env.local
+.env.*.local
+
+# Databases & Local Dynamic Data
+data/
+chroma_benchmark_db/
+verify_chromadb_test/
+*.pkl
+chunks.json
+perplexity_plot.png
+evaluation_results.png
+
+# IDEs & OS files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.log
+
+# Frontend local assets (if built or ran at root, though they are inside frontend/)
+node_modules/
+dist/

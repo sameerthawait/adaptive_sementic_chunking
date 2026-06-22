@@ -1,0 +1,97 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ascGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="48" fill="#0B1120"/>
+
+  <!-- Adaptive Chunk Boundaries -->
+  <rect x="72" y="120" width="100" height="220"
+        rx="20"
+        fill="none"
+        stroke="url(#ascGrad)"
+        stroke-width="4"
+        opacity="0.8"/>
+
+  <rect x="206" y="90" width="120" height="280"
+        rx="20"
+        fill="none"
+        stroke="url(#ascGrad)"
+        stroke-width="4"/>
+
+  <rect x="360" y="150" width="80" height="160"
+        rx="20"
+        fill="none"
+        stroke="url(#ascGrad)"
+        stroke-width="4"
+        opacity="0.8"/>
+
+  <!-- Perplexity Time-Series -->
+  <path
+    d="M70 280
+       L110 260
+       L150 250
+       L190 245
+       L220 140
+       L250 250
+       L290 230
+       L330 220
+       L370 120
+       L410 240
+       L440 230"
+    fill="none"
+    stroke="#22D3EE"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#glow)"
+  />
+
+  <!-- Boundary Spike Markers -->
+  <circle cx="220" cy="140" r="12" fill="#818CF8"/>
+  <circle cx="370" cy="120" r="12" fill="#818CF8"/>
+
+  <!-- Graph Connections -->
+  <line x1="220" y1="140" x2="370" y2="120"
+        stroke="#94A3B8"
+        stroke-width="2"
+        opacity="0.5"/>
+
+  <line x1="220" y1="140" x2="256" y2="420"
+        stroke="#94A3B8"
+        stroke-width="2"
+        opacity="0.5"/>
+
+  <line x1="370" y1="120" x2="256" y2="420"
+        stroke="#94A3B8"
+        stroke-width="2"
+        opacity="0.5"/>
+
+  <!-- Agentic RAG Node -->
+  <circle cx="256" cy="420" r="24"
+          fill="url(#ascGrad)"
+          filter="url(#glow)"/>
+
+  <!-- ASC Text -->
+  <text x="256"
+        y="485"
+        text-anchor="middle"
+        font-family="Inter, Arial, sans-serif"
+        font-size="40"
+        font-weight="700"
+        fill="#F8FAFC">
+    ASC
+  </text>
+</svg>

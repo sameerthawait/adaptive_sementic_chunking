@@ -1,0 +1,5 @@
+Artificial intelligence (AI) is intelligence demonstrated by machines, as opposed to the natural intelligence displayed by animals including humans. AI research has been defined as the field of study of intelligent agents, which refers to any system that perceives its environment and takes actions that maximize its chance of achieving its goals. More specifically, machine learning is a branch of artificial intelligence that focuses on building systems that learn from data.
+
+In contrast, genomics is an interdisciplinary field of biology focusing on the structure, function, evolution, mapping, and editing of genomes. A genome is an organism's complete set of DNA, including all of its genes as well as its hierarchical structure. Modern genome sequencing allows researchers to decode biological blueprints in hours, aiding in the identification of disease mutations.
+
+Finally, quantum computing is a rapidly-emerging technology that harnesses the laws of quantum mechanics to solve problems too complex for classical computers. Quantum computers use qubits, which can exist in superposition, allowing them to perform massive parallel calculations.
