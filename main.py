@@ -273,7 +273,7 @@ def benchmark(
 
 @app.command()
 def serve(
-    host: str = typer.Option("127.0.0.1", help="FastAPI host address."),
+    host: str = typer.Option("0.0.0.0", help="FastAPI host address."),
     port: int = typer.Option(8000, help="FastAPI port number."),
     reload: bool = typer.Option(False, help="Enable hot reload (for development).")
 ):

@@ -22,6 +22,7 @@ from asc.chunker.adaptive_chunker import AdaptiveSemanticChunker
 from asc.vectorstore.chroma_store import ASCVectorStore
 from asc.retrieval.retriever import AdaptiveSemanticRetriever
 from asc.retrieval.rag_pipeline import run_rag
+from asc.retrieval.reranker import CrossEncoderReranker
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -130,6 +131,8 @@ class QueryRequest(BaseModel):
     filters: Optional[FilterParams] = Field(None, description="Metadata filters.")
     vector_weight: Optional[float] = Field(0.6, description="Weight for vector search in hybrid.")
     bm25_weight: Optional[float] = Field(0.4, description="Weight for BM25 search in hybrid.")
+    use_reranker: bool = Field(True, description="Whether to use cross-encoder reranker.")
+    reranker_model: str = Field("minilm", description="Reranker model key (e.g. minilm, bge-base, bge-v2).")
 
 
 class RetrieveRequest(BaseModel):
@@ -141,6 +144,8 @@ class RetrieveRequest(BaseModel):
     filters: Optional[FilterParams] = Field(None, description="Metadata filters.")
     vector_weight: Optional[float] = Field(0.6, description="Weight for vector search in hybrid.")
     bm25_weight: Optional[float] = Field(0.4, description="Weight for BM25 search in hybrid.")
+    use_reranker: bool = Field(True, description="Whether to use cross-encoder reranker.")
+    reranker_model: str = Field("minilm", description="Reranker model key (e.g. minilm, bge-base, bge-v2).")
 
 
 class ChunkResponse(BaseModel):
@@ -291,6 +296,18 @@ async def index_documents_endpoint(request: IndexRequest) -> Any:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/reranker/models", tags=["Retrieval"])
+async def get_reranker_models():
+    """
+    Returns available cross-encoder models with size and speed info.
+    Used by frontend model selector dropdown.
+    """
+    return {
+        "models": CrossEncoderReranker.list_models(),
+        "default": "minilm"
+    }
+
+
 @app.post("/retrieve", tags=["Retrieval"])
 async def retrieve_endpoint(request: RetrieveRequest) -> Any:
     """Retrieve relevant chunks using over-retrieval, coherence re-ranking, and boundary expansion."""
@@ -321,7 +338,9 @@ async def retrieve_endpoint(request: RetrieveRequest) -> Any:
             mmr_lambda=request.mmr_lambda,
             vector_weight=request.vector_weight if request.vector_weight is not None else 0.6,
             bm25_weight=request.bm25_weight if request.bm25_weight is not None else 0.4,
-            active_filters=chunk_filter
+            active_filters=chunk_filter,
+            use_reranker=request.use_reranker,
+            reranker_model=request.reranker_model
         )
         
         docs = await retriever._aget_relevant_documents(request.query)
@@ -386,7 +405,9 @@ async def rag_endpoint(request: QueryRequest) -> Any:
             mmr_lambda=request.mmr_lambda,
             vector_weight=request.vector_weight if request.vector_weight is not None else 0.6,
             bm25_weight=request.bm25_weight if request.bm25_weight is not None else 0.4,
-            active_filters=chunk_filter
+            active_filters=chunk_filter,
+            use_reranker=request.use_reranker,
+            reranker_model=request.reranker_model
         )
         
         # Load LLM from config
@@ -409,7 +430,10 @@ async def rag_endpoint(request: QueryRequest) -> Any:
             "answer": res["answer"],
             "entailment_score": res["entailment_score"],
             "sources": sources_list,
-            "iterations": res["iterations"]
+            "iterations": res["iterations"],
+            "reranker_used": request.use_reranker,
+            "reranker_model": request.reranker_model,
+            "candidates_scored": retriever._last_candidates_scored
         }
     except Exception as e:
         logger.error(f"Error in /rag: {e}")

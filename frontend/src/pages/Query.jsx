@@ -47,6 +47,8 @@ export default function Query() {
     chunkType: ''
   });
   const [sourcesList, setSourcesList] = useState([]);
+  const [useReranker, setUseReranker] = useState(true);
+  const [rerankerModel, setRerankerModel] = useState('minilm');
 
   // Fetch sources list when active collection changes
   useEffect(() => {
@@ -108,7 +110,9 @@ export default function Query() {
         mmrLambda,
         filters,
         vectorWeight,
-        bm25Weight
+        bm25Weight,
+        useReranker,
+        rerankerModel
       },
       {
         onSuccess: (data) => {
@@ -221,6 +225,10 @@ export default function Query() {
             filters={filters}
             setFilters={setFilters}
             sourcesList={sourcesList}
+            useReranker={useReranker}
+            setUseReranker={setUseReranker}
+            rerankerModel={rerankerModel}
+            setRerankerModel={setRerankerModel}
           />
 
           {/* Loading Skeleton View */}
@@ -275,6 +283,18 @@ export default function Query() {
                           {(results.entailment_score * 100).toFixed(0)}%
                         </span>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Info Row */}
+                  <div className="text-[10px] text-t3 font-bold uppercase tracking-wider space-y-0.5 -mt-1 pb-1">
+                    {results.reranker_used ? (
+                      <>
+                        <div>Retrieved via: <span className="text-signal">Hybrid + Reranker ({results.reranker_model === 'minilm' ? 'MiniLM' : results.reranker_model === 'bge-base' ? 'BGE Base' : results.reranker_model === 'bge-v2' ? 'BGE v2' : results.reranker_model}) + MMR</span></div>
+                        <div>Candidates scored: <span className="text-t1 font-mono">{results.candidates_scored}</span> &rarr; Reranked to 8 &rarr; MMR to <span className="text-t1 font-mono">{k}</span></div>
+                      </>
+                    ) : (
+                      <div>Retrieved via: <span className="text-signal">Hybrid + MMR</span></div>
                     )}
                   </div>
 

@@ -23,15 +23,18 @@ export const chunkText = (text, options) => api.post('chunk', { text, ...options
 export const indexDocuments = (texts, sources, collection) => api.post('index', { texts, sources, collection });
 
 export const queryRAG = (query, collection, k, options = {}) => {
-  const { useHybrid, mmrLambda, filters, vectorWeight, bm25Weight } = options;
+  const { useHybrid, mmrLambda, filters, vectorWeight, bm25Weight, useReranker, rerankerModel } = options;
   const payload = {
     query,
     collection,
     k,
+    use_rag: true,
     use_hybrid: useHybrid !== undefined ? useHybrid : true,
     mmr_lambda: mmrLambda !== undefined ? mmrLambda : 0.5,
     vector_weight: vectorWeight !== undefined ? parseFloat(vectorWeight) : undefined,
     bm25_weight: bm25Weight !== undefined ? parseFloat(bm25Weight) : undefined,
+    use_reranker: useReranker !== undefined ? useReranker : true,
+    reranker_model: rerankerModel || 'minilm',
   };
   if (filters) {
     payload.filters = {
@@ -48,7 +51,7 @@ export const queryRAG = (query, collection, k, options = {}) => {
 };
 
 export const queryRetrieve = (query, collection, k, options = {}) => {
-  const { useHybrid, mmrLambda, filters, vectorWeight, bm25Weight } = options;
+  const { useHybrid, mmrLambda, filters, vectorWeight, bm25Weight, useReranker, rerankerModel } = options;
   const payload = {
     query,
     collection,
@@ -57,6 +60,8 @@ export const queryRetrieve = (query, collection, k, options = {}) => {
     mmr_lambda: mmrLambda !== undefined ? mmrLambda : 0.5,
     vector_weight: vectorWeight !== undefined ? parseFloat(vectorWeight) : undefined,
     bm25_weight: bm25Weight !== undefined ? parseFloat(bm25Weight) : undefined,
+    use_reranker: useReranker !== undefined ? useReranker : true,
+    reranker_model: rerankerModel || 'minilm',
   };
   if (filters) {
     payload.filters = {
@@ -75,12 +80,14 @@ export const queryRetrieve = (query, collection, k, options = {}) => {
 export const getHealth = () => api.get('health');
 export const getCollections = () => api.get('collections');
 export const getSources = (collection = 'default') => api.get(`sources?collection=${collection}`);
+export const getRerankerModels = () => api.get('reranker/models');
 
 // Grouped exports for hook compatibility
 export const ascApi = {
   getHealth,
   getCollections,
   getSources,
+  getRerankerModels,
   chunkText: (text, source = 'api_input', visualize = true, options = {}) => 
     chunkText(text, { source, visualize, ...options }),
   indexTexts: indexDocuments,

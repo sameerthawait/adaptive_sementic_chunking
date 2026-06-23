@@ -144,6 +144,11 @@ class ASCVectorStore:
         """Alias for add_documents."""
         return await self.add_documents(documents, batch_size=batch_size)
     
+    async def embed_query(self, query: str) -> list[float]:
+        """Asynchronously embeds a query."""
+        return await self.embedder.aembed_query(query)
+
+    
     async def similarity_search(
         self,
         query: str,

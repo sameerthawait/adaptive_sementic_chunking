@@ -65,6 +65,10 @@ else
     pip install ollama==0.4.4 --no-deps
 fi
 
+echo "Downloading default reranker model..."
+python -c "from sentence_transformers import CrossEncoder; CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+echo "Reranker model ready."
+
 # 4. Download NLTK datasets
 echo "Downloading NLTK resources (punkt, punkt_tab)..."
 python -m nltk.downloader punkt punkt_tab

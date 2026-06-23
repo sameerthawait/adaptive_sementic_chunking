@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { ascApi } from '../../api/client';
 
 export function SearchBar({
   query,
@@ -21,9 +22,27 @@ export function SearchBar({
   setMmrLambda,
   filters,
   setFilters,
-  sourcesList = []
+  sourcesList = [],
+  useReranker = true,
+  setUseReranker,
+  rerankerModel = 'minilm',
+  setRerankerModel
 }) {
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [rerankerModels, setRerankerModels] = useState([]);
+
+  useEffect(() => {
+    ascApi.getRerankerModels()
+      .then((res) => {
+        if (res && res.models) {
+          setRerankerModels(res.models);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load reranker models:", err);
+      });
+  }, []);
+
 
   const activeFilterCount = [
     filters?.source,
@@ -182,6 +201,79 @@ export function SearchBar({
                   {retrievalMode === 'vector' && 'Pure vector search matching chunk embeddings via cosine similarity.'}
                   {retrievalMode === 'keyword' && 'Pure BM25 keyword matching for exact terms.'}
                 </span>
+              </div>
+
+              {/* Reranker Section */}
+              <div className="border-t border-border/30 pt-4 flex flex-col gap-3">
+                <label className="text-[10px] font-bold text-t2 uppercase tracking-wider">Reranker</label>
+                
+                <div className="flex items-center gap-2 select-none">
+                  <input
+                    type="checkbox"
+                    id="use_reranker_checkbox"
+                    checked={useReranker}
+                    onChange={(e) => setUseReranker(e.target.checked)}
+                    className="w-4 h-4 rounded text-signal border-border focus:ring-signal cursor-pointer"
+                  />
+                  <label htmlFor="use_reranker_checkbox" className="text-xs text-t2 font-medium cursor-pointer">
+                    Enable Cross-Encoder Reranker
+                  </label>
+                </div>
+
+                {useReranker && (
+                  <div className="flex flex-col gap-2 pl-6 animate-fadeIn">
+                    <label className="text-[10px] font-bold text-t3 uppercase tracking-wider">Model</label>
+                    <div className="flex flex-col gap-3">
+                      {rerankerModels.length > 0 ? (
+                        rerankerModels.map((m) => (
+                          <label key={m.key} className="flex items-start gap-2.5 cursor-pointer group select-none">
+                            <input
+                              type="radio"
+                              name="reranker_model"
+                              value={m.key}
+                              checked={rerankerModel === m.key}
+                              onChange={() => setRerankerModel(m.key)}
+                              className="mt-0.5 w-3.5 h-3.5 text-signal border-border focus:ring-signal cursor-pointer"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-t1 group-hover:text-signal transition-colors">
+                                {m.key === 'minilm' ? 'MiniLM' : m.key === 'bge-base' ? 'BGE Base' : 'BGE v2'}
+                              </span>
+                              <span className="text-[10px] text-t3 leading-normal">
+                                {m.size} · {m.speed.charAt(0).toUpperCase() + m.speed.slice(1)} · {m.description}
+                              </span>
+                            </div>
+                          </label>
+                        ))
+                      ) : (
+                        [
+                          { key: 'minilm', label: 'MiniLM', size: '80MB', speed: 'Fast', desc: 'Best for quick inference, good quality' },
+                          { key: 'bge-base', label: 'BGE Base', size: '280MB', speed: 'Medium', desc: 'Strong multilingual reranker' },
+                          { key: 'bge-v2', label: 'BGE v2', size: '570MB', speed: 'Slower', desc: 'Best quality, recommended for production' }
+                        ].map((m) => (
+                          <label key={m.key} className="flex items-start gap-2.5 cursor-pointer group select-none">
+                            <input
+                              type="radio"
+                              name="reranker_model"
+                              value={m.key}
+                              checked={rerankerModel === m.key}
+                              onChange={() => setRerankerModel(m.key)}
+                              className="mt-0.5 w-3.5 h-3.5 text-signal border-border focus:ring-signal cursor-pointer"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-t1 group-hover:text-signal transition-colors">
+                                {m.label}
+                              </span>
+                              <span className="text-[10px] text-t3 leading-normal">
+                                {m.size} · {m.speed} · {m.desc}
+                              </span>
+                            </div>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* MMR Diversity Slider */}

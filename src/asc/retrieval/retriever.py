@@ -14,6 +14,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import AsyncCallbackManagerForRetrieverRun, CallbackManagerForRetrieverRun
 
 from asc.vectorstore.chroma_store import ASCVectorStore
+from asc.retrieval.reranker import CrossEncoderReranker, RerankerConfig
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,11 @@ class AdaptiveSemanticRetriever(BaseRetriever):
     vector_weight: float = 0.6       # weight for vector scores in hybrid
     bm25_weight: float = 0.4         # weight for BM25 scores in hybrid
     active_filters: Any = None
+    use_reranker: bool = True
+    reranker_model: str = "minilm"
+    reranker_config: RerankerConfig = RerankerConfig()
+    _reranker: CrossEncoderReranker | None = None
+    _last_candidates_scored: int = 0
     
     class Config:
         arbitrary_types_allowed = True
@@ -54,6 +60,33 @@ class AdaptiveSemanticRetriever(BaseRetriever):
         super().__init__(**data)
         if self.vector_store is None:
             self.vector_store = self.vectorstore
+
+    def _get_reranker(self) -> CrossEncoderReranker:
+        """Lazy init reranker — only loads model when first query is made."""
+        if self._reranker is None:
+            self._reranker = CrossEncoderReranker(self.reranker_config)
+        return self._reranker
+
+    def _expand_boundary_chunks(self, docs: list[Document]) -> list[Document]:
+        """Expands chunks that are close to boundaries by retrieving adjacent context."""
+        expanded_docs = []
+        for doc in docs:
+            expanded_docs.append(doc)
+            z_score = float(doc.metadata.get("boundary_z_score", 0.0))
+            if z_score >= self.expand_threshold:
+                doc_id = doc.metadata.get("id")
+                if doc_id:
+                    adjacent = self.vector_store.get_adjacent_chunks(doc_id, window=1)
+                    expanded_docs.extend(adjacent)
+
+        seen_ids = set()
+        final_docs = []
+        for doc in expanded_docs:
+            doc_id = doc.metadata.get("id") or f"{doc.metadata.get('source')}_{doc.metadata.get('chunk_index')}"
+            if doc_id not in seen_ids:
+                seen_ids.add(doc_id)
+                final_docs.append(doc)
+        return final_docs
 
     def _coherence_score(
         self,
@@ -215,69 +248,40 @@ class AdaptiveSemanticRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun | None = None
     ) -> list[Document]:
-        """Retrieves relevant documents based on hybrid search and MMR reranking.
 
-        Pipeline:
-        1. hybrid_search(query, k=k*3, filter=active_filters)   ← over-retrieve
-        2. mmr_rerank(query_embedding, candidates, k, lambda_mult)
-        3. boundary_expand(results)                              ← existing feature
-        4. return final k documents
-        """
-        # Resolve filters
-        chroma_filter = None
-        if self.active_filters:
-            if hasattr(self.active_filters, "to_chroma_where"):
-                chroma_filter = self.active_filters.to_chroma_where()
-            else:
-                chroma_filter = self.active_filters
+        # Step 1 — Hybrid Search: BM25 + Vector → RRF fusion
+        # Retrieve top_k_before candidates (default 20)
+        candidates = await self.vectorstore.hybrid_search(
+            query=query,
+            k=self.reranker_config.top_k_before,  # over-retrieve for reranker
+            vector_weight=self.vector_weight,
+            bm25_weight=self.bm25_weight,
+            filter=self.active_filters.to_chroma_where() if self.active_filters else None
+        )
 
-        # 1. Retrieve candidates
-        if self.use_hybrid_search:
-            candidates = await self.vector_store.hybrid_search(
+        # Step 2 — Cross-Encoder Reranker (if enabled)
+        # Scores each (query, doc) pair together for accurate relevance
+        self._last_candidates_scored = 0
+        if self.use_reranker and candidates:
+            self._last_candidates_scored = len(candidates)
+            candidates = self._get_reranker().rerank(
                 query=query,
-                k=self.k * 3,
-                vector_weight=self.vector_weight,
-                bm25_weight=self.bm25_weight,
-                filter=chroma_filter
+                candidates=candidates,
+                model_key=self.reranker_model
             )
-        else:
-            candidates = await self.vector_store.similarity_search(
-                query=query,
-                k=self.k * 3,
-                filter=chroma_filter
-            )
+            # candidates now limited to reranker_config.top_k_after
 
-        if not candidates:
-            return []
-
-        # 2. MMR Rerank
-        query_embedding = await self.vector_store.embedder.aembed_query(query)
-        top_k_docs = self.mmr_rerank(
+        # Step 3 — MMR: Maximal Marginal Relevance for diversity
+        query_embedding = await self.vectorstore.embed_query(query)
+        final_docs = self.mmr_rerank(
             query_embedding=query_embedding,
             candidates=candidates,
             k=self.k,
             lambda_mult=self.mmr_lambda
         )
 
-        # 3. Boundary Expansion
-        expanded_docs = []
-        for doc in top_k_docs:
-            expanded_docs.append(doc)
-
-            if self.boundary_expand:
-                z_score = float(doc.metadata.get("boundary_z_score", 0.0))
-                if z_score >= self.expand_threshold:
-                    doc_id = doc.metadata.get("id")
-                    if doc_id:
-                        adjacent = self.vector_store.get_adjacent_chunks(doc_id, window=1)
-                        expanded_docs.extend(adjacent)
-
-        seen_ids = set()
-        final_docs = []
-        for doc in expanded_docs:
-            doc_id = doc.metadata.get("id") or f"{doc.metadata.get('source')}_{doc.metadata.get('chunk_index')}"
-            if doc_id not in seen_ids:
-                seen_ids.add(doc_id)
-                final_docs.append(doc)
+        # Step 4 — Boundary-Aware Expansion (existing)
+        if self.boundary_expand:
+            final_docs = self._expand_boundary_chunks(final_docs)
 
         return final_docs
