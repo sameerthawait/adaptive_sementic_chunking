@@ -84,6 +84,9 @@ adaptive-semantic-chunking/
 │   │   └── embedder.py
 │   ├── retrieval/
 │   │   ├── __init__.py
+│   │   ├── bm25_index.py
+│   │   ├── filters.py
+│   │   ├── reranker.py
 │   │   ├── retriever.py
 │   │   └── rag_pipeline.py
 │   ├── vectorstore/
@@ -242,5 +245,6 @@ You can deploy the entire stack (FastAPI Backend + React Frontend + Ollama) usin
 ## Advanced Retrieval Features (Query Playground)
 The Query page supports high-fidelity retrieval customization:
 *   **Hybrid Search (RRF)**: Merges dense vector embeddings search (`nomic-embed-text`) with sparse keyword matching (`BM25`) using Reciprocal Rank Fusion. Customize weights via the vector/BM25 ratio.
+*   **Cross-Encoder Reranking**: Re-scores the top retrieved candidates together with the query using a sentence-transformers cross-encoder model (e.g., MiniLM) to produce high-precision relevance scores before MMR diversity filtering.
 *   **MMR (Maximal Marginal Relevance)**: Diversifies retrieved context chunks to reduce redundancy. Toggle using the MMR slider.
 *   **Metadata Filtering**: Filter queries dynamically by document source, chunk sentence count range, perplexity thresholds, or segment type.
