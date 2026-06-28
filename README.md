@@ -248,3 +248,4 @@ The Query page supports high-fidelity retrieval customization:
 *   **Cross-Encoder Reranking**: Re-scores the top retrieved candidates together with the query using a sentence-transformers cross-encoder model (e.g., MiniLM) to produce high-precision relevance scores before MMR diversity filtering.
 *   **MMR (Maximal Marginal Relevance)**: Diversifies retrieved context chunks to reduce redundancy. Toggle using the MMR slider.
 *   **Metadata Filtering**: Filter queries dynamically by document source, chunk sentence count range, perplexity thresholds, or segment type.
+#test
