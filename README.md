@@ -249,3 +249,4 @@ The Query page supports high-fidelity retrieval customization:
 *   **MMR (Maximal Marginal Relevance)**: Diversifies retrieved context chunks to reduce redundancy. Toggle using the MMR slider.
 *   **Metadata Filtering**: Filter queries dynamically by document source, chunk sentence count range, perplexity thresholds, or segment type.
 #test
+#test2
